@@ -1,0 +1,249 @@
+ <html>
+<head>
+    <title>Flappy Bird</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: url('https://i.postimg.cc/bZv9Vbwr/background.png') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #9ad3de; /* Background color */
+        }
+        #gameArea {
+            position: relative;
+            width: 1500px;
+            height: 600px;
+            background-color: transparent;
+            overflow: hidden;
+            border: 1px solid black;
+          background-image: url('https://i.postimg.cc/bZv9Vbwr/background.jpg'); 
+    background-size: cover;
+    background-position: center;
+    margin: 0 auto;
+        }
+        #bird {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-image: url('https://i.postimg.cc/VJzTDHdG/kisspng-flappy-bird-app-store-sprite-scratch-5ac321829754e9-0109309915227375386199-removebg-preview.png');
+            background-size: cover;
+            z-index: 1;
+          left: 50px;
+    top: 220px;
+          border-radius: 50%;
+    transition: top 0.2s ease-in-out; /* Smooth transition */
+        }
+        .pipe {
+            position: absolute;
+            width: 80px;
+            background-image: url('https://flappybirdfake.netlify.app/pipe.png');
+            background-size: cover;
+            z-index: 1;
+          top: 20px;
+    right: 20px;
+    font-size: 24px;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Text shadow */
+        }
+        #gameOverText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: red;
+            display: none;
+            z-index: 2; 
+          text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Text shadow */
+        }
+        #retryButton {
+            
+          display: none;
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px 20px;
+    font-size: 24px;
+    background-color: #f8e9a1;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Button shadow */
+        }
+      
+      #score {
+    position: absolute;
+    
+}
+    </style>
+</head>
+<body>
+    <div id="gameArea">
+        <div id="bird"></div>
+        <div id="gameOverText">Game Over</div>
+        <button id="retryButton">Retry</button>
+    </div>
+    <div id="score">Score: 0</div>
+    <script>
+        const bird = document.getElementById("bird");
+        const scoreDisplay = document.getElementById("score");
+        const gameArea = document.getElementById("gameArea");
+        const gameOverText = document.getElementById("gameOverText");
+        const retryButton = document.getElementById("retryButton");
+
+        let birdTop = 220;
+        let birdVelocity = 0; // Velocity of the bird
+        let flapHeight = 250; // Height the bird moves up with each flap
+        let fallSpeed = 25; // Constant fall speed
+        let pipes = [];
+        let score = 0;
+        let gameStarted = false;
+        let gameOver = false;
+        let gameUpdateTimer;
+        let pipeSpawnTimer;
+        let spacePressed = false; // Track if the space bar is pressed
+
+        gameOverText.style.display = "none";
+        retryButton.style.display = "none";
+
+        gameArea.addEventListener("click", startGame);
+        document.addEventListener("keydown", handleKeyDown);
+        document.addEventListener("keyup", handleKeyUp);
+        document.addEventListener("touchstart", handleKeyDown);
+        document.addEventListener("touchend", handleKeyUp);
+        retryButton.addEventListener("click", resetGame);
+
+        function handleKeyDown(event) {
+            if ((event.type == "touchstart" || event.code === "Space") && gameStarted && !gameOver && !spacePressed) {
+                flap();
+                spacePressed = true;
+            }
+        }
+
+        function handleKeyUp(event) {
+            if (event.code === "Space" || event.type === "touchend") {
+                spacePressed = false;
+            }
+        }
+
+        function flap() {
+            birdVelocity = -flapHeight; // Set fixed upward velocity for flap
+        }
+
+        function startGame() {
+            if (!gameStarted) {
+                gameStarted = true;
+                spawnPipe(); // Initial pipe spawn
+                gameUpdateTimer = setInterval(update, 60); // Start game loop
+                pipeSpawnTimer = setInterval(spawnPipe, 2000); // Start spawning pipes every 2 seconds
+            }
+        }
+
+        function spawnPipe() {
+            const pipeGap = 300;
+            const minPipeHeight = 50; // Minimum height of the pipe
+            const maxPipeHeight = gameArea.clientHeight - pipeGap - minPipeHeight;
+
+            const topPipeHeight = minPipeHeight + Math.floor(Math.random() * (maxPipeHeight - minPipeHeight));
+            const bottomPipeHeight = gameArea.clientHeight - topPipeHeight - pipeGap;
+
+            const topPipe = document.createElement("div");
+            topPipe.classList.add("pipe");
+            topPipe.style.height = topPipeHeight + "px";
+            topPipe.style.width = "80px"; // Set the width of the top pipe
+            topPipe.style.position = "absolute";
+            topPipe.style.left = "1500px"; // Adjusted left position for wider canvas
+            topPipe.style.top = "0px"; // Top pipe should start from the top of the canvas
+            topPipe.style.transform = "rotate(180deg)"; // Rotate the top pipe
+            topPipe.style.backgroundImage = "url('https://flappybirdfake.netlify.app/pipe.png')";
+            topPipe.style.backgroundSize = "80px " + topPipeHeight + "px"; // Ensure full visibility
+
+            const bottomPipe = document.createElement("div");
+            bottomPipe.classList.add("pipe");
+            bottomPipe.style.height = bottomPipeHeight + "px";
+            bottomPipe.style.width = "80px"; // Set the width of the bottom pipe
+            bottomPipe.style.position = "absolute";
+            bottomPipe.style.left = "1500px"; // Adjusted left position for wider canvas
+            bottomPipe.style.top = topPipeHeight + pipeGap + "px"; // Bottom pipe should be positioned after the gap
+            bottomPipe.style.backgroundImage = "url('https://flappybirdfake.netlify.app/pipe.png')";
+            bottomPipe.style.backgroundSize = "80px " + bottomPipeHeight + "px"; // Ensure full visibility
+
+            gameArea.appendChild(topPipe);
+            gameArea.appendChild(bottomPipe);
+
+            pipes.push({ top: topPipe, bottom: bottomPipe });
+        }
+
+        function update() {
+            if (!gameOver) {
+                birdTop += birdVelocity; // Update bird position with velocity
+
+                if (birdTop > gameArea.clientHeight) {
+                    endGame();
+                }
+                bird.style.top = birdTop + "px";
+
+                birdVelocity = fallSpeed; // Apply constant downward velocity
+
+                for (let i = 0; i < pipes.length; i++) {
+                    pipes[i].top.style.left = parseInt(pipes[i].top.style.left) - 5 + "px";
+                    pipes[i].bottom.style.left = parseInt(pipes[i].bottom.style.left) - 5 + "px";
+
+                    if (parseInt(pipes[i].top.style.left) < -80) {
+                        gameArea.removeChild(pipes[i].top);
+                        gameArea.removeChild(pipes[i].bottom);
+                        pipes.splice(i, 1);
+                        i--;
+                    }
+
+                    if (
+                        parseInt(pipes[i].top.style.left) < 50 &&
+                        parseInt(pipes[i].top.style.left) > 30 &&
+                        (birdTop < parseInt(pipes[i].top.style.height) ||
+                            birdTop > gameArea.clientHeight - parseInt(pipes[i].bottom.style.height))
+                    ) {
+                        endGame();
+                    }
+
+                    if (parseInt(pipes[i].top.style.left) === 30) {
+                        score++;
+                        scoreDisplay.innerText = "Score: " + score;
+                    }
+                }
+            }
+        }
+
+        function endGame() {
+            gameOver = true;
+            clearInterval(gameUpdateTimer); // Stop updating the game
+            clearInterval(pipeSpawnTimer); // Stop spawning pipes
+            gameOverText.style.display = "block";
+            retryButton.style.display = "block";
+        }
+
+        function resetGame() {
+            birdTop = 220;
+            birdVelocity = 0; // Reset bird velocity
+            bird.style.top = birdTop + "px";
+            pipes.forEach(pipe => gameArea.removeChild(pipe.top));
+            pipes.forEach(pipe => gameArea.removeChild(pipe.bottom));
+            pipes = [];
+            score = 0;
+            scoreDisplay.innerText = "Score: " + score;
+            gameOver = false;
+            gameOverText.style.display = "none";
+            retryButton.style.display = "none";
+            gameStarted = false; // Reset gameStarted flag
+            spacePressed = false; // Reset spacePressed flag
+            startGame(); // Restart the game
+        }
+    </script>
+</body>
+</html>
